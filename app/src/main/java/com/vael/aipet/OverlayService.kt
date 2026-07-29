@@ -77,34 +77,31 @@ class OverlayService : Service() {
             setWebViewClient(WebViewClient())
 
             settings.apply {
-                setAppCacheEnabled(false)
                 javaScriptEnabled = true
                 allowFileAccess = true
                 loadWithOverviewMode = true
                 useWideViewPort = true
             }
 
-            // Load the pet HTML from assets
             loadUrl("file:///android_asset/pet.html")
 
             setOnTouchListener { _, event ->
-                params?.let { p ->
-                    when (event.action) {
-                        MotionEvent.ACTION_DOWN -> {
-                            initialX = p.x
-                            initialY = p.y
-                            initialTouchX = event.rawX
-                            initialTouchY = event.rawY
-                            true
-                        }
-                        MotionEvent.ACTION_MOVE -> {
-                            p.x = initialX + (event.rawX - initialTouchX).toInt()
-                            p.y = initialY + (event.rawY - initialTouchY).toInt()
-                            windowManager.updateViewLayout(this, p)
-                            true
-                        }
-                        else -> false
+                val p = params ?: return@setOnTouchListener false
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        initialX = p.x
+                        initialY = p.y
+                        initialTouchX = event.rawX
+                        initialTouchY = event.rawY
+                        true
                     }
+                    MotionEvent.ACTION_MOVE -> {
+                        p.x = initialX + (event.rawX - initialTouchX).toInt()
+                        p.y = initialY + (event.rawY - initialTouchY).toInt()
+                        windowManager.updateViewLayout(this, p)
+                        true
+                    }
+                    else -> false
                 }
             }
         }
