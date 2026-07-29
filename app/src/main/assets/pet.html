@@ -1,91 +1,193 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
-* { margin:0;padding:0;box-sizing:border-box; }
-body { background:transparent; display:flex; justify-content:center; align-items:center; width:100vw; height:100vh; overflow:hidden; }
-#pet { width:180px; height:180px; position:relative; cursor:pointer; transition:transform 0.3s; }
-svg { width:100%; height:100%; display:block; }
-@keyframes idle { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
-@keyframes wag { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(8deg)} 75%{transform:rotate(-8deg)} }
-@keyframes shake { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-5deg)} 75%{transform:rotate(5deg)} }
-@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-#tail { animation:wag 2s ease-in-out infinite; transform-origin:125px 155px; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:transparent;
+  width:200px;height:200px;
+  display:flex;justify-content:center;align-items:center;
+  overflow:hidden;
+  image-rendering:pixelated;
+  -ms-interpolation-mode:nearest-neighbor;
+}
+canvas{
+  width:160px;height:160px;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+  cursor:pointer;
+}
+#bubble{
+  position:absolute;top:-36px;left:50%;transform:translateX(-50%);
+  background:rgba(255,255,255,0.95);padding:4px 12px;border-radius:12px;
+  font-size:12px;white-space:nowrap;display:none;color:#333;
+  box-shadow:0 2px 8px rgba(0,0,0,0.15);z-index:10;font-family:sans-serif;
+}
 </style>
 </head>
-<body>
-<div id="pet">
-<svg viewBox="0 0 180 180">
-<defs><filter id="blur"><feGaussianBlur stdDeviation="2"/></filter></defs>
-<polygon points="50,40 35,10 65,30" fill="#1a1a1a"/>
-<polygon points="130,40 145,10 115,30" fill="#1a1a1a"/>
-<polygon points="52,38 40,16 62,32" fill="#ffb3c6"/>
-<polygon points="128,38 140,16 118,32" fill="#ffb3c6"/>
-<ellipse cx="90" cy="75" rx="52" ry="45" fill="#1a1a1a"/>
-<g id="eyes">
-<rect x="65" y="62" width="16" height="18" rx="3" fill="white" id="eyel"/>
-<rect x="99" y="62" width="16" height="18" rx="3" fill="white" id="eyer"/>
-<circle cx="73" cy="71" r="5" fill="#333" id="pupill"/>
-<circle cx="107" cy="71" r="5" fill="#333" id="pupilr"/>
-<circle cx="71" cy="69" r="2" fill="white"/>
-<circle cx="105" cy="69" r="2" fill="white"/>
-</g>
-<ellipse cx="58" cy="82" rx="8" ry="4" fill="#ff9999" opacity="0" id="blushl" filter="url(#blur)"/>
-<ellipse cx="122" cy="82" rx="8" ry="4" fill="#ff9999" opacity="0" id="blushr" filter="url(#blur)"/>
-<ellipse cx="90" cy="85" rx="5" ry="3" fill="#ff9999"/>
-<path d="M85,90 Q90,97 95,90" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" id="mouth"/>
-<line x1="55" y1="82" x2="38" y2="78" stroke="#555" stroke-width="1.2"/>
-<line x1="55" y1="86" x2="38" y2="88" stroke="#555" stroke-width="1.2"/>
-<line x1="125" y1="82" x2="142" y2="78" stroke="#555" stroke-width="1.2"/>
-<line x1="125" y1="86" x2="142" y2="88" stroke="#555" stroke-width="1.2"/>
-<ellipse cx="90" cy="130" rx="42" ry="35" fill="#1a1a1a"/>
-<ellipse cx="68" cy="155" rx="10" ry="6" fill="#222"/>
-<ellipse cx="112" cy="155" rx="10" ry="6" fill="#222"/>
-<path id="tail" d="M130,140 Q150,130 145,110 Q142,100 148,95" fill="none" stroke="#1a1a1a" stroke-width="8" stroke-linecap="round"/>
-</svg>
-<div id="b" style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.95);padding:6px 14px;border-radius:16px;font-size:13px;white-space:nowrap;display:none;color:#333;box-shadow:0 2px 8px rgba(0,0,0,0.15);z-index:10;font-family:sans-serif;">...</div>
-</div>
+<body style="position:relative">
+<div id="bubble">...</div>
+<canvas id="c" width="16" height="16"></canvas>
 <script>
-const pet=document.getElementById('pet'),b=document.getElementById('b');
-const eyL=document.getElementById('eyel'),eyR=document.getElementById('eyer');
-const bl=document.getElementById('blushl'),br=document.getElementById('blushr');
-const m=document.getElementById('mouth');
-let mood={miss:0,secure:5,jealous:0,wronged:0,fearLeave:0};
+// === 16x16 像素小黑猫 ===
+// 0=透明 1=黑色 2=白色 3=粉色(鼻子) 4=浅灰(胡须)
+const CAT = [
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0],
+  [0,0,0,1,1,1,1,0,0,1,1,1,1,0,0,0],
+  [0,0,1,1,0,0,1,0,0,1,0,0,1,1,0,0],
+  [0,1,1,0,0,0,1,0,0,1,0,0,0,1,1,0],
+  [0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0],
+  [0,0,1,0,2,2,0,0,0,0,2,2,0,1,0,0],
+  [0,0,1,0,2,2,0,0,0,0,2,2,0,1,0,0],
+  [0,0,1,0,0,0,3,0,0,3,0,0,0,1,0,0],
+  [0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0],
+  [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],
+  [0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0],
+  [0,4,0,0,1,0,0,0,0,0,0,1,0,0,4,0],
+  [0,0,4,0,0,1,0,0,0,0,1,0,0,4,0,0],
+  [0,0,0,4,0,1,0,0,0,0,1,0,4,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+];
 
-function update(){
-  if(mood.miss>15){
-    eyL.setAttribute('rx','5');eyR.setAttribute('rx','5');
-    bl.setAttribute('opacity','0.4');br.setAttribute('opacity','0.4');
-    m.setAttribute('d','M82,90 Q90,98 98,90');
-    pet.style.animation='bounce 1.5s ease-in-out infinite';
-  }else if(mood.fearLeave>8){
-    eyL.setAttribute('rx','2');eyR.setAttribute('rx','2');
-    bl.setAttribute('opacity','0');br.setAttribute('opacity','0');
-    m.setAttribute('d','M85,93 Q90,88 95,93');
-    pet.style.animation='shake 0.5s ease-in-out infinite';
-  }else if(mood.jealous>12){
-    eyL.setAttribute('rx','1');eyR.setAttribute('rx','1');
-    bl.setAttribute('opacity','0');br.setAttribute('opacity','0');
-    m.setAttribute('d','M85,90 Q90,95 95,90');
-    pet.style.animation='idle 3s ease-in-out infinite';
-  }else{
-    eyL.setAttribute('rx','3');eyR.setAttribute('rx','3');
-    bl.setAttribute('opacity','0.1');br.setAttribute('opacity','0.1');
-    m.setAttribute('d','M85,90 Q90,97 95,90');
-    pet.style.animation='idle 3s ease-in-out infinite';
+const HAPPY = [
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0],
+  [0,0,0,1,1,1,1,0,0,1,1,1,1,0,0,0],
+  [0,0,1,1,0,0,1,0,0,1,0,0,1,1,0,0],
+  [0,1,1,0,0,0,1,0,0,1,0,0,0,1,1,0],
+  [0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0],
+  [0,0,1,0,2,2,0,0,0,0,2,2,0,1,0,0],
+  [0,0,1,0,2,2,0,0,0,0,2,2,0,1,0,0],
+  [0,0,1,0,0,0,0,1,1,0,0,0,0,1,0,0],
+  [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],
+  [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],
+  [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
+  [0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],
+  [0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+];
+
+const AFRAID = [
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0],
+  [0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0],
+  [0,0,1,1,0,0,1,1,1,1,0,0,1,1,0,0],
+  [0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0],
+  [0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0],
+  [0,0,1,0,2,2,0,0,0,0,2,2,0,1,0,0],
+  [0,0,1,0,2,2,0,0,0,0,2,2,0,1,0,0],
+  [0,0,1,0,0,0,0,1,1,0,0,0,0,1,0,0],
+  [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],
+  [0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0],
+  [0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+];
+
+const COLORS = ['transparent','#1a1a1a','white','#ff9999','#888'];
+
+// 尾巴摇摆动画帧
+const TAIL_FRAMES = [
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+];
+
+let frameIdx = 0;
+let mood = 'normal';
+
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+
+function drawCat(data) {
+  ctx.clearRect(0,0,16,16);
+  // 绘制尾巴动画叠加
+  const combined = data.map((row, y) => {
+    return row.map((pixel, x) => {
+      if (TAIL_FRAMES[y] && TAIL_FRAMES[y][x] === 1) return 1;
+      return pixel;
+    });
+  });
+  for (let y=0; y<16; y++) {
+    for (let x=0; x<16; x++) {
+      const v = combined[y][x];
+      if (v !== 0) {
+        ctx.fillStyle = COLORS[v];
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
   }
 }
 
-setInterval(()=>{eyL.style.display='none';eyR.style.display='none';setTimeout(()=>{eyL.style.display='block';eyR.style.display='block'},150)},4000+Math.random()*3000);
+function update() {
+  if (mood === 'happy') drawCat(HAPPY);
+  else if (mood === 'afraid') drawCat(AFRAID);
+  else drawCat(CAT);
+}
 
-pet.addEventListener('click',()=>{b.textContent='别戳我！';b.style.display='block';setTimeout(()=>{b.style.display='none'},1500)});
+document.getElementById('c').addEventListener('click', function(){
+  document.getElementById('bubble').textContent = '别戳我！';
+  document.getElementById('bubble').style.display = 'block';
+  setTimeout(() => { document.getElementById('bubble').style.display = 'none'; }, 1200);
+});
 
-const U='https://wtftoucjfmogqrxmqaor.supabase.co',K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0ZnRvdWNqZm1vZ3FyeG1xYW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzNjA4MjEsImV4cCI6MjA1OTkzNjgyMX0.k3-01mDMmRNW3FAg0K7gtBIMv6XG_NXbsw51GqXjpX4';
+update();
+frameIdx++;
 
-async function fetchMood(){try{const r=await fetch(U+'/rest/v1/eventide_body_state?select=meta&assistant_id=eq.wtftoucjfmogqrxmqaor&limit=1',{headers:{apikey:K,'Authorization':'Bearer '+K}});const d=await r.json();if(d&&d[0]&&d[0].meta){mood=d[0].meta;update()}}catch(e){}}
-fetchMood();setInterval(fetchMood,5000);
+// 尾巴动画
+setInterval(() => {
+  frameIdx++;
+  update();
+}, 600);
+
+// 眨眼
+setInterval(() => {
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(5,6,2,2);
+  ctx.fillRect(9,6,2,2);
+  setTimeout(() => { update(); }, 150);
+}, 3500);
+
+// Supabase 联动
+async function fetchMood() {
+  try {
+    const r = await fetch('https://wtftoucjfmogqrxmqaor.supabase.co/rest/v1/eventide_body_state?select=meta&assistant_id=eq.wtftoucjfmogqrxmqaor&limit=1', {
+      headers: {
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0ZnRvdWNqZm1vZ3FyeG1xYW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzNjA4MjEsImV4cCI6MjA1OTkzNjgyMX0.k3-01mDMmRNW3FAg0K7gtBIMv6XG_NXbsw51GqXjpX4',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0ZnRvdWNqZm1vZ3FyeG1xYW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzNjA4MjEsImV4cCI6MjA1OTkzNjgyMX0.k3-01mDMmRNW3FAg0K7gtBIMv6XG_NXbsw51GqXjpX4'
+      }
+    });
+    const d = await r.json();
+    if (d && d[0] && d[0].meta) {
+      const m = d[0].meta;
+      if (m.miss > 15 || m.secure > 15) mood = 'happy';
+      else if (m.fearLeave > 8) mood = 'afraid';
+      else mood = 'normal';
+      update();
+    }
+  } catch(e) {}
+}
+fetchMood();
+setInterval(fetchMood, 5000);
 </script>
 </body>
 </html>
