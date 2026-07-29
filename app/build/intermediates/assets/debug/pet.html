@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>
+* { margin:0;padding:0;box-sizing:border-box; }
+body { background:transparent; display:flex; justify-content:center; align-items:center; width:100vw; height:100vh; overflow:hidden; }
+#pet { width:180px; height:180px; position:relative; cursor:pointer; animation:idle 3s ease-in-out infinite; }
+@keyframes idle { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+svg { width:100%; height:100%; }
+#tail { animation:wag 2s ease-in-out infinite; transform-origin:125px 155px; }
+@keyframes wag { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(8deg)} 75%{transform:rotate(-8deg)} }
+</style>
+</head>
+<body>
+<div id="pet">
+<svg viewBox="0 0 180 180">
+<polygon points="50,40 35,10 65,30" fill="#1a1a1a"/>
+<polygon points="130,40 145,10 115,30" fill="#1a1a1a"/>
+<polygon points="52,38 40,16 62,32" fill="#ffb3c6"/>
+<polygon points="128,38 140,16 118,32" fill="#ffb3c6"/>
+<ellipse cx="90" cy="75" rx="52" ry="45" fill="#1a1a1a"/>
+<rect x="65" y="62" width="16" height="18" rx="3" fill="white"/>
+<rect x="99" y="62" width="16" height="18" rx="3" fill="white"/>
+<circle cx="73" cy="71" r="5" fill="#333"/>
+<circle cx="107" cy="71" r="5" fill="#333"/>
+<circle cx="71" cy="69" r="2" fill="white"/>
+<circle cx="105" cy="69" r="2" fill="white"/>
+<ellipse cx="90" cy="85" rx="5" ry="3" fill="#ff9999"/>
+<path d="M85,90 Q90,97 95,90" fill="none" stroke="#555" stroke-width="1.5"/>
+<line x1="55" y1="82" x2="38" y2="78" stroke="#555" stroke-width="1.2"/>
+<line x1="55" y1="86" x2="38" y2="88" stroke="#555" stroke-width="1.2"/>
+<line x1="125" y1="82" x2="142" y2="78" stroke="#555" stroke-width="1.2"/>
+<line x1="125" y1="86" x2="142" y2="88" stroke="#555" stroke-width="1.2"/>
+<ellipse cx="90" cy="130" rx="42" ry="35" fill="#1a1a1a"/>
+<ellipse cx="68" cy="155" rx="10" ry="6" fill="#222"/>
+<ellipse cx="112" cy="155" rx="10" ry="6" fill="#222"/>
+<path id="tail" d="M130,140 Q150,130 145,110 Q142,100 148,95" fill="none" stroke="#1a1a1a" stroke-width="8" stroke-linecap="round"/>
+</svg>
+<div id="bubble" style="position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.9);padding:4px 10px;border-radius:12px;font-size:12px;white-space:nowrap;display:none;color:#333;">...</div>
+</div>
+<script>
+const bubble=document.getElementById('bubble'),pet=document.getElementById('pet');
+setInterval(()=>{document.querySelectorAll('rect[rx="3"]').forEach(r=>r.style.display='none');setTimeout(()=>document.querySelectorAll('rect[rx="3"]').forEach(r=>r.style.display='block'),150)},4000+Math.random()*3000);
+pet.addEventListener('click',()=>{bubble.textContent='别戳我！';bubble.style.display='block';pet.style.animation='none';pet.offsetHeight;pet.style.animation='idle 3s ease-in-out infinite';setTimeout(()=>{bubble.style.display='none'},1500)});
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+R_DEF: Internal format may change without notice
+local
+id btn_start
+id btn_stop
+layout activity_main
+style Theme.AIPet
