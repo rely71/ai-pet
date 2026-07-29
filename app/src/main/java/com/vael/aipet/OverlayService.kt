@@ -29,6 +29,7 @@ class OverlayService : Service() {
     companion object {
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "ai_pet_channel"
+        private const val PET_SIZE = 200
     }
 
     override fun onCreate() {
@@ -72,6 +73,8 @@ class OverlayService : Service() {
 
     @Suppress("ClickableViewAccessibility")
     private fun createOverlayView() {
+        val scale = resources.displayMetrics.density
+
         webView = WebView(this).apply {
             setBackgroundColor(0x00000000)
             setWebViewClient(WebViewClient())
@@ -106,9 +109,10 @@ class OverlayService : Service() {
             }
         }
 
+        val size = (PET_SIZE * scale).toInt()
         params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            size,
+            size,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             else

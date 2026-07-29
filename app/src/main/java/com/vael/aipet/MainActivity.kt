@@ -12,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 
 class MainActivity : AppCompatActivity() {
-
     companion object {
         private const val OVERLAY_PERMISSION_REQUEST = 1001
         private const val USAGE_STATS_REQUEST = 1002
@@ -28,11 +27,11 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btn_stop).setOnClickListener {
             stopService(Intent(this, OverlayService::class.java))
+            Toast.makeText(this, "小宝休息啦 🐱", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun checkAndStart() {
-        // Check overlay permission
         if (!Settings.canDrawOverlays(this)) {
             AlertDialog.Builder(this)
                 .setTitle("需要悬浮窗权限")
@@ -48,7 +47,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Check notification permission (Android 13+)
         if (Build.VERSION.SDK_INT >= 33) {
             if (!NotificationManagerCompat.from(this).areNotificationsEnabled()) {
                 AlertDialog.Builder(this)
@@ -67,5 +65,6 @@ class MainActivity : AppCompatActivity() {
 
         startService(Intent(this, OverlayService::class.java))
         Toast.makeText(this, "小宝启动啦 🐱", Toast.LENGTH_SHORT).show()
+        finish()
     }
 }
